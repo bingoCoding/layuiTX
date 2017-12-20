@@ -10,6 +10,13 @@ public class AddFriends {
     //对方分组id
     private int tgid;
 
+    public AddFriends(int mid, int mgid, int tid, int tgid) {
+        this.mid = mid;
+        this.mgid = mgid;
+        this.tid = tid;
+        this.tgid = tgid;
+    }
+
     public int getMid() {
         return mid;
     }

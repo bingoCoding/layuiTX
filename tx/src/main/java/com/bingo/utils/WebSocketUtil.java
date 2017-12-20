@@ -1,59 +1,69 @@
 package com.bingo.utils;
 
+import com.bingo.common.Contant;
+import com.bingo.domain.*;
+import com.bingo.service.Impl.RedisService;
+import com.bingo.service.Impl.UserService;
+import com.bingo.websocket.domain.Domain;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+
+import javax.websocket.Session;
+import java.io.IOException;
+import java.util.*;
 
 public class WebSocketUtil {
-    private final Logger LOGGER  = LoggerFactory.getLogger(WebSocketUtil.class);
+    private final static Logger LOGER  = LoggerFactory.getLogger(WebSocketUtil.class);
 
-    private final lazy val application = Application.getApplicationContext();
+    public final static Map<Integer,Session> sessions = Collections.synchronizedMap(new HashMap<>());
 
-    @BeanProperty final var sessions = Collections.synchronizedMap(new HashMap[Integer, Session]())
+    private static RedisService redisService = SpringManage.getBean(RedisService.class);
 
-    private lazy val redisService: RedisService = application.getBean(classOf[RedisService])
+    private static UserService userService = SpringManage.getBean(UserService.class);
 
-    private lazy val userService: UserService = application.getBean(classOf[UserService])
-
-    private final val gson: Gson = new Gson
+    private final static Gson gson = new Gson();
 
     /**
      * @description 发送消息
      * @message Message
      */
-    def sendMessage(message: Message): Unit = synchronized {
-        LOGGER.info("发送好友消息和群消息!");
+    public static synchronized void sendMessage(Message message) {
+        LOGER.info("发送好友消息和群消息!");
         //封装返回消息格式
-        var gid = message.getTo.getId
-        val receive = WebSocketUtil.getReceiveType(message)
-        val key: Integer = message.getTo.getId
+        Integer gid = message.getTo().getId();
+        Receive receive = WebSocketUtil.getReceiveType(message);
+        Integer key = message.getTo().getId();
         //聊天类型，可能来自朋友或群组
-        if("friend".equals(message.getTo.getType)) {
+        if("friend".equals(message.getTo().getType())) {
             //是否在线
-            if(WebSocketUtil.getSessions.containsKey(key)) {
-                val session: Session = WebSocketUtil.getSessions.get(key)
-                receive.setStatus(1)
-                WebSocketUtil.sendMessage(gson.toJson(receive).replaceAll("Type", "type"), session)
+            if(WebSocketUtil.sessions.containsKey(key)) {
+                Session session = WebSocketUtil.sessions.get(key);
+                receive.setStatus(1);
+                WebSocketUtil.sendMessage(gson.toJson(receive).replaceAll("Type", "type"), session);
             }
             //保存为离线消息,默认是为离线消息
-            userService.saveMessage(receive)
+            userService.saveMessage(receive);
         } else {
-            receive.setId(gid)
+            receive.setId(gid);
             //找到群组id里面的所有用户
-            val users:List[User] = userService.findUserByGroupId(gid)
+            List<User> users = userService.findUserByGroupId(gid);
             //过滤掉本身的uid
-            JavaConversions.collectionAsScalaIterable(users).filter(_.id != message.getMine.getId)
-                    .foreach { user => {
-                //是否在线
-                if(WebSocketUtil.getSessions.containsKey(user.getId)) {
-                    val session: Session = WebSocketUtil.getSessions.get(user.getId)
-                    receive.setStatus(1)
-                    WebSocketUtil.sendMessage(gson.toJson(receive).replaceAll("Type", "type"), session)
-                } else {
-                    receive.setId(key)
+            users.stream().forEach(user -> {
+                if (user.getId() != message.getMine().getId()){
+                    //是否在线
+                    if(WebSocketUtil.sessions.containsKey(user.getId())) {
+                        Session session = WebSocketUtil.sessions.get(user.getId());
+                        receive.setStatus(1);
+                        WebSocketUtil.sendMessage(gson.toJson(receive).replaceAll("Type", "type"), session);
+                    } else {
+                        receive.setId(key);
+                    }
                 }
-            }}
+            });
             //保存为离线消息
-            userService.saveMessage(receive)
+            userService.saveMessage(receive);
         }
     }
 
@@ -61,32 +71,32 @@ public class WebSocketUtil {
      * @description 同意添加好友
      * @param mess
      */
-    def agreeAddGroup(mess: Message): Unit = {
-        val agree = gson.fromJson(mess.getMsg, classOf[Domain.AgreeAddGroup])
-        userService.addGroupMember(agree.getGroupId, agree.getToUid, agree.getMessageBoxId)
+    public static void agreeAddGroup(Message mess) {
+        Domain.AgreeAddGroup agree = gson.fromJson(mess.getMsg(), Domain.AgreeAddGroup.class);
+        userService.addGroupMember(agree.getGroupId(), agree.getToUid(), agree.getMessageBoxId());
     }
 
     /**
      * @description 拒绝添加群
      * @param mess
      */
-    def refuseAddGroup(mess: Message): Unit = {
-        val refuse = gson.fromJson(mess.getMsg, classOf[Domain.AgreeAddGroup])
-        userService.updateAddMessage(refuse.getMessageBoxId, 2)
+    public static void refuseAddGroup(Message mess) {
+        Domain.AgreeAddGroup refuse = gson.fromJson(mess.getMsg(), Domain.AgreeAddGroup.class);
+        userService.updateAddMessage(refuse.getMessageBoxId(), 2);
     }
 
     /**
      * @description 通知对方删除好友
-     * @param uId我的id
+     * @param uId 我的id
      * @param friendId 对方Id
      */
-    def removeFriend(uId: Integer, friendId: Integer) = synchronized {
+    public static synchronized void removeFriend(Integer uId, Integer friendId) {
         //对方是否在线，在线则处理，不在线则不处理
-        var result = new HashMap[String, String]
+        Map<String,String> result = new HashMap<>();
         if(sessions.get(friendId) != null) {
             result.put("type", "delFriend");
             result.put("uId", uId + "");
-            WebSocketUtil.sendMessage(gson.toJson(result), sessions.get(friendId))
+            WebSocketUtil.sendMessage(gson.toJson(result), sessions.get(friendId));
         }
     }
 
@@ -95,22 +105,22 @@ public class WebSocketUtil {
      * @param uid
      * @param message
      */
-    def addGroup(uid: Integer, message: Message):Unit = synchronized {
-        val addMessage = new AddMessage
-        val mine = message.getMine
-        val to = message.getTo
-        val t = gson.fromJson(message.getMsg, classOf[Domain.Group])
-        addMessage.setFromUid(mine.getId)
-        addMessage.setToUid(to.getId)
-        addMessage.setTime(DateUtil.getDateTime)
-        addMessage.setGroupId(t.getGroupId)
-        addMessage.setRemark(t.getRemark)
-        addMessage.setType(1)
-        userService.saveAddMessage(addMessage)
-        var result = new HashMap[String, String]
-        if (sessions.get(to.getId) != null) {
+    public static synchronized void addGroup(Integer uid, Message message) {
+        AddMessage addMessage = new AddMessage();
+        Mine mine = message.getMine();
+        To to = message.getTo();
+        Domain.Group t = gson.fromJson(message.getMsg(), Domain.Group.class);
+        addMessage.setFromUid(mine.getId());
+        addMessage.setToUid(to.getId());
+        addMessage.setTime(new Date());
+        addMessage.setGroupId(t.getGroupId());
+        addMessage.setRemark(t.getRemark());
+        addMessage.setType(1);
+        userService.saveAddMessage(addMessage);
+        Map<String,String> result = new HashMap<>();
+        if (sessions.get(to.getId()) != null) {
             result.put("type", "addGroup");
-            sendMessage(gson.toJson(result), sessions.get(to.getId))
+            sendMessage(gson.toJson(result), sessions.get(to.getId()));
         }
     }
 
@@ -119,22 +129,22 @@ public class WebSocketUtil {
      * @param uid
      * @param message
      */
-    def addFriend(uid: Integer, message: Message): Unit = synchronized {
-        val mine = message.getMine
-        val addMessage = new AddMessage
-        addMessage.setFromUid(mine.getId)
-        addMessage.setTime(DateUtil.getDateTime)
-        addMessage.setToUid(message.getTo.getId)
-        val add = gson.fromJson(message.getMsg(), classOf[Add])
-        addMessage.setRemark(add.getRemark)
-        addMessage.setType(add.getType)
-        addMessage.setGroupId(add.getGroupId)
-        userService.saveAddMessage(addMessage)
-        var result = new HashMap[String, String]
+    public static synchronized void addFriend(Integer uid, Message message) {
+        Mine mine = message.getMine();
+        AddMessage addMessage = new AddMessage();
+        addMessage.setFromUid(mine.getId());
+        addMessage.setTime(new Date());
+        addMessage.setToUid(message.getTo().getId());
+        Add add = gson.fromJson(message.getMsg(), Add.class);
+        addMessage.setRemark(add.getRemark());
+        addMessage.setType(add.getType());
+        addMessage.setGroupId(add.getGroupId());
+        userService.saveAddMessage(addMessage);
+        Map<String,String> result = new HashMap<>();
         //如果对方在线，则推送给对方
-        if (sessions.get(message.getTo.getId) != null) {
-            result.put("type", "addFriend")
-            sendMessage(gson.toJson(result), sessions.get(message.getTo.getId))
+        if (sessions.get(message.getTo().getId()) != null) {
+            result.put("type", "addFriend");
+            sendMessage(gson.toJson(result), sessions.get(message.getTo().getId()));
         }
     }
 
@@ -142,29 +152,29 @@ public class WebSocketUtil {
      * @description 统计离线消息数量
      * @param uid
      */
-    def countUnHandMessage(uid: Integer): HashMap[String, String] = synchronized{
-        val count = userService.countUnHandMessage(uid, 0)
-        LOGGER.info("count = " + count)
-        var result = new HashMap[String, String]
-        result.put("type", "unHandMessage")
-        result.put("count", count + "")
-        result
+    public static synchronized Map<String, String> countUnHandMessage(Integer uid) {
+        Integer count = userService.countUnHandMessage(uid, 0);
+        LOGER.info("count = " + count);
+        Map<String, String> result = new HashMap<>();
+        result.put("type", "unHandMessage");
+        result.put("count", count + "");
+        return result;
     }
 
     /**
      * @description 监测某个用户的离线或者在线
      * @param message
      */
-    def checkOnline(message: Message, session: Session): HashMap[String, String] = synchronized {
-        LOGGER.info("监测在线状态" + message.getTo.toString)
-        val uids = redisService.getSets(SystemConstant.ONLINE_USER)
-        var result = new HashMap[String, String]
-        result.put("type", "checkOnline")
-        if (uids.contains(message.getTo.getId.toString))
-            result.put("status", "在线")
+    public static synchronized Map<String, String> checkOnline(Message message, Session session)  {
+        LOGER.info("监测在线状态" + message.getTo().toString());
+        Set<String> uids = redisService.getSets(Contant.ONLINE_USER);
+        Map<String,String> result = new HashMap<>();
+        result.put("type", "checkOnline");
+        if (uids.contains(message.getTo().getId().toString()))
+            result.put("status", "在线");
         else
-            result.put("status", "离线")
-        result
+            result.put("status", "离线");
+        return result;
     }
 
     /**
@@ -172,8 +182,12 @@ public class WebSocketUtil {
      * @param message
      * @param session
      */
-    def sendMessage(message: String, session: Session): Unit = synchronized {
-        session.getBasicRemote().sendText(message)
+    public static synchronized void sendMessage(String message, Session session) {
+        try {
+            session.getBasicRemote().sendText(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -181,19 +195,19 @@ public class WebSocketUtil {
      * @param Message
      * @return Receive
      */
-    def getReceiveType(message: Message): Receive = {
-        val mine = message.getMine
-        val to = message.getTo
-        var receive = new Receive
-        receive.setId(mine.getId)
-        receive.setFromid(mine.getId)
-        receive.setToid(to.getId)
-        receive.setUsername(mine.getUsername)
-        receive.setType(to.getType)
-        receive.setAvatar(mine.getAvatar)
-        receive.setContent(mine.getContent)
-        receive.setTimestamp(DateUtil.getLongDateTime)
-        receive
+    static Receive getReceiveType(Message message) {
+        Mine mine=message.getMine();
+        To to = message.getTo();
+        Receive receive = new Receive();
+        receive.setId(mine.getId());
+        receive.setFromid(mine.getId());
+        receive.setToid(to.getId());
+        receive.setUsername(mine.getUsername());
+        receive.setType(to.getType());
+        receive.setAvatar(mine.getAvatar());
+        receive.setContent(mine.getContent());
+        receive.setTimestamp(new Date());
+        return receive;
     }
 
     /**
@@ -201,11 +215,11 @@ public class WebSocketUtil {
      * @param uid 用户id
      * @param status 状态
      */
-    def changeOnline(uid: Integer, status: String) = synchronized {
+    public static synchronized void changeOnline(Integer uid, String status) {
         if ("online".equals(status)) {
-            redisService.setSet(SystemConstant.ONLINE_USER, uid + "")
+            redisService.setSet(Contant.ONLINE_USER, uid + "");
         } else {
-            redisService.removeSetValue(SystemConstant.ONLINE_USER, uid + "")
+            redisService.removeSetValue(Contant.ONLINE_USER, uid + "");
         }
     }
 }

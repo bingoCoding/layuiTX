@@ -18,6 +18,17 @@ public class ChatHistory {
     //时间
     private Date timestamp;
 
+    public ChatHistory(Integer id, String username, String avatar, String content, Date timestamp) {
+        this.id = id;
+        this.username = username;
+        this.avatar = avatar;
+        this.content = content;
+        this.timestamp = timestamp;
+    }
+
+    public ChatHistory() {
+    }
+
     public Integer getId() {
         return id;
     }

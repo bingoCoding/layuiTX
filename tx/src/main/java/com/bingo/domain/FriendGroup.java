@@ -7,6 +7,14 @@ public class FriendGroup {
     //群组名称
     private String groupName;
 
+    public FriendGroup(Integer uid, String groupName) {
+        this.uid = uid;
+        this.groupName = groupName;
+    }
+
+    public FriendGroup() {
+    }
+
     public Integer getUid() {
         return uid;
     }
