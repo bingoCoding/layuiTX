@@ -1,5 +1,6 @@
 package com.bingo.controller;
 
+import com.bingo.common.Contant;
 import com.bingo.domain.User;
 import com.bingo.service.IUserService;
 import com.google.gson.Gson;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.ResultSet;
+import java.util.Arrays;
 
 public class UserController {
     private final static Logger LOGGER = LoggerFactory.getLogger(UserController.class);
@@ -28,10 +30,10 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping("/leaveOutGroup", method = RequestMethod.POST)
+    @RequestMapping(value = "/leaveOutGroup", method = RequestMethod.POST)
     String leaveOutGroup(@RequestParam("groupId")Integer groupId, HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        val result = userService.leaveOutGroup(groupId, user.getId());
+        Boolean result = userService.leaveOutGroup(groupId, user.getId());
         return gson.toJson(new ResultSet(result));
     }
 
@@ -41,11 +43,11 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/removeFriend"), method = Array(RequestMethod.POST))
-    def removeFriend(@RequestParam("friendId") friendId: Integer,request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        val result = userService.removeFriend(friendId, user.getId)
-        gson.toJson(new ResultSet(result))
+    @RequestMapping(value = "/removeFriend", method = RequestMethod.POST)
+    String removeFriend(@RequestParam("friendId")Integer friendId,HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        Boolean result = userService.removeFriend(friendId, user.getId());
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
@@ -56,15 +58,15 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/changeGroup"), method = Array(RequestMethod.POST))
-    def changeGroup(@RequestParam("groupId") groupId: Integer, @RequestParam("userId") userId: Integer
-            ,request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        val result = userService.changeGroup(groupId, userId, user.getId)
+    @RequestMapping(value = "/changeGroup", method = RequestMethod.POST)
+    String changeGroup(@RequestParam("groupId")Integer groupId, @RequestParam("userId")Integer userId
+            ,HttpServletRequest request){
+        User user = (User) request.getSession().getAttribute("user");
+        Boolean result = userService.changeGroup(groupId, userId, user.getId());
         if (result)
-            return gson.toJson(new ResultSet(result))
+            return gson.toJson(new ResultSet(result));
         else
-            gson.toJson(new ResultSet(SystemConstant.ERROR, SystemConstant.ERROR_MESSAGE))
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.ERROR_MESSAGE));
     }
 
     /**
@@ -74,10 +76,10 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/refuseFriend"), method = Array(RequestMethod.POST))
-    def refuseFriend(@RequestParam("messageBoxId") messageBoxId: Integer,request: HttpServletRequest): String = {
-        val result = userService.updateAddMessage(messageBoxId, 2)
-        gson.toJson(new ResultSet(result))
+    @RequestMapping(value = "/refuseFriend", method = RequestMethod.POST)
+    String refuseFriend(@RequestParam("messageBoxId")Integer messageBoxId,HttpServletRequest request) {
+        Boolean result = userService.updateAddMessage(messageBoxId, 2);
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
@@ -89,13 +91,13 @@ public class UserController {
      * @return String
      */
     @ResponseBody
-    @RequestMapping(value = Array("/agreeFriend"), method = Array(RequestMethod.POST))
-    def agreeFriend(@RequestParam("uid") uid: Integer,@RequestParam("from_group") fromGroup: Integer,
-                    @RequestParam("group") group: Integer, @RequestParam("messageBoxId") messageBoxId: Integer,
-                    request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        val result = userService.addFriend(user.getId, group, uid, fromGroup, messageBoxId)
-        gson.toJson(new ResultSet(result))
+    @RequestMapping(value = "/agreeFriend", method = RequestMethod.POST)
+    String agreeFriend(@RequestParam("uid")Integer uid ,@RequestParam("from_group")Integer fromGroup,
+                    @RequestParam("group")Integer group , @RequestParam("messageBoxId")Integer messageBoxId,
+                    HttpServletRequest request){
+        User user = (User) request.getSession().getAttribute("user");
+        Boolean result = userService.addFriend(user.getId(), group, uid, fromGroup, messageBoxId);
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
