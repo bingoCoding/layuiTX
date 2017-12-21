@@ -1,21 +1,33 @@
 package com.bingo.controller;
 
 import com.bingo.common.Contant;
+import com.bingo.domain.ChatHistory;
+import com.bingo.domain.Receive;
 import com.bingo.domain.User;
 import com.bingo.service.IUserService;
+import com.bingo.utils.FileUtil;
+import com.bingo.vo.*;
+import com.github.pagehelper.PageHelper;
 import com.google.gson.Gson;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.sql.ResultSet;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+@Controller
+@Api(value = "用户相关操作")
+@RequestMapping("/user")
 public class UserController {
     private final static Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
@@ -106,13 +118,13 @@ public class UserController {
      * @param page
      */
     @ResponseBody
-    @RequestMapping(value = Array("/findAddInfo"), method = Array(RequestMethod.GET))
-    def findAddInfo(@RequestParam("uid") uid: Integer, @RequestParam("page") page: Int): String = {
-        PageHelper.startPage(page, SystemConstant.ADD_MESSAGE_PAGE)
-        val list = userService.findAddInfo(uid)
-        val count = userService.countUnHandMessage(uid, null).toInt
-        val pages = if (count < SystemConstant.ADD_MESSAGE_PAGE) 1 else count / SystemConstant.ADD_MESSAGE_PAGE + 1
-        gson.toJson(new ResultPageSet(list, pages)).replaceAll("Type", "type")
+    @RequestMapping(value = "/findAddInfo", method = RequestMethod.GET)
+    String findAddInfo(@RequestParam("uid")Integer uid, @RequestParam("page")int page) {
+        PageHelper.startPage(page, Contant.ADD_MESSAGE_PAGE);
+        List<AddInfo > list = userService.findAddInfo(uid);
+        int count = userService.countUnHandMessage(uid, null);
+        int pages =  (count < Contant.ADD_MESSAGE_PAGE)? 1 : (count / Contant.ADD_MESSAGE_PAGE + 1);
+        return gson.toJson(new ResultPageSet(list, pages)).replaceAll("Type", "type");
     }
 
     /**
@@ -122,17 +134,17 @@ public class UserController {
      * @param sex 性别
      */
     @ResponseBody
-    @RequestMapping(value = Array("/findUsers"), method = Array(RequestMethod.GET))
-    def findUsers(@RequestParam(value = "page",defaultValue = "1") page: Int,
-                  @RequestParam(value = "name", required = false) name: String,
-                  @RequestParam(value = "sex", required = false) sex: Integer): String = {
-        val count = userService.countUsers(name, sex)
-        val pages = if (count < SystemConstant.USER_PAGE) 1 else (count / SystemConstant.USER_PAGE + 1)
-        PageHelper.startPage(page, SystemConstant.USER_PAGE)
-        val users = userService.findUsers(name, sex)
-        var result = new ResultPageSet(users)
-        result.setPages(pages)
-        gson.toJson(result)
+    @RequestMapping(value = "/findUsers", method = RequestMethod.GET)
+    String findUsers(@RequestParam(value = "page",defaultValue = "1")int page,
+                  @RequestParam(value = "name", required = false)String name ,
+                  @RequestParam(value = "sex", required = false)Integer sex){
+        int count = userService.countUsers(name, sex);
+        int pages = (count < Contant.USER_PAGE)? 1: (count / Contant.USER_PAGE + 1);
+        PageHelper.startPage(page, Contant.USER_PAGE);
+        List<User> users = userService.findUsers(name, sex);
+        ResultPageSet result = new ResultPageSet(users);
+        result.setPages(pages);
+        return gson.toJson(result);
     }
 
     /**
@@ -141,16 +153,16 @@ public class UserController {
      * @param name 群名称
      */
     @ResponseBody
-    @RequestMapping(value = Array("/findGroups"), method = Array(RequestMethod.GET))
-    def findGroups(@RequestParam(value = "page",defaultValue = "1") page: Int,
-                   @RequestParam(value = "name", required = false) name: String): String = {
-        val count = userService.countGroup(name)
-        val pages = if (count < SystemConstant.USER_PAGE) 1 else (count / SystemConstant.USER_PAGE + 1)
-        PageHelper.startPage(page, SystemConstant.USER_PAGE)
-        val groups = userService.findGroup(name)
-        var result = new ResultPageSet(groups)
-        result.setPages(pages)
-        gson.toJson(result)
+    @RequestMapping(value = "/findGroups", method = RequestMethod.GET)
+    String findGroups(@RequestParam(value = "page",defaultValue = "1")int page,
+                   @RequestParam(value = "name", required = false)String name){
+        int count = userService.countGroup(name);
+        int pages = (count < Contant.USER_PAGE)? 1 :(count / Contant.USER_PAGE + 1);
+        PageHelper.startPage(page, Contant.USER_PAGE);
+        List<GroupList> groups = userService.findGroup(name);
+        ResultPageSet result = new ResultPageSet(groups);
+        result.setPages(pages);
+        return gson.toJson(result);
     }
 
     /**
@@ -159,14 +171,14 @@ public class UserController {
      * @param Type 类型，可能是friend或者是group
      */
     @ResponseBody
-    @RequestMapping(value = Array("/chatLog"), method = Array(RequestMethod.POST))
-    def chatLog(@RequestParam("id") id: Integer, @RequestParam("Type") Type: String,
-                @RequestParam("page") page: Int, request: HttpServletRequest, model: Model): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        PageHelper.startPage(page, SystemConstant.SYSTEM_PAGE)
+    @RequestMapping(value = "/chatLog", method = RequestMethod.POST)
+    String chatLog(@RequestParam("id")Integer id , @RequestParam("Type")String Type,
+                @RequestParam("page")int page,HttpServletRequest request,Model model){
+        User user = (User) request.getSession().getAttribute("user");
+        PageHelper.startPage(page, Contant.SYSTEM_PAGE);
         //查找聊天记录
-        val historys:List[ChatHistory] = userService.findHistoryMessage(user, id, Type)
-        gson.toJson(new ResultSet(historys))
+        List<ChatHistory> historys = userService.findHistoryMessage(user, id, Type);
+        return gson.toJson(new ResultSet(historys));
     }
 
     /**
@@ -174,33 +186,33 @@ public class UserController {
      * @param id 与谁的聊天记录id
      * @param Type 类型，可能是friend或者是group
      */
-    @RequestMapping(value = Array("/chatLogIndex"), method = Array(RequestMethod.GET))
-    def chatLogIndex(@RequestParam("id") id: Integer, @RequestParam("Type") Type: String,
-                     model: Model, request: HttpServletRequest): String = {
-        model.addAttribute("id", id)
-        model.addAttribute("Type", Type)
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        var pages: Int = userService.countHistoryMessage(user.getId, id, Type)
-        pages = if (pages < SystemConstant.SYSTEM_PAGE) pages else (pages / SystemConstant.SYSTEM_PAGE + 1)
-        model.addAttribute("pages", pages)
-        "chatLog"
+    @RequestMapping(value = "/chatLogIndex", method = RequestMethod.GET)
+    String chatLogIndex(@RequestParam("id")Integer id, @RequestParam("Type")String Type,
+                        Model model,HttpServletRequest request) {
+        model.addAttribute("id", id);
+        model.addAttribute("Type", Type);
+        User user = (User) request.getSession().getAttribute("user");
+        int pages = userService.countHistoryMessage(user.getId(), id, Type);
+        pages =  (pages < Contant.SYSTEM_PAGE)? pages : (pages / Contant.SYSTEM_PAGE + 1);
+        model.addAttribute("pages", pages);
+        return "chatLog";
     }
 
     /**
      * @description 获取离线消息
      */
     @ResponseBody
-    @RequestMapping(value = Array("/getOffLineMessage"), method = Array(RequestMethod.POST))
-    def getOffLineMessage(request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        LOGGER.info("查询 uid = " + user.getId + " 的离线消息")
-        val receives: List[Receive] = userService.findOffLineMessage(user.getId, 0)
-        JavaConversions.collectionAsScalaIterable(receives).foreach { receive => {
-            val user = userService.findUserById(receive.getId)
-            receive.setUsername(user.getUsername)
-            receive.setAvatar(user.getAvatar)
-        } }
-        gson.toJson(new ResultSet(receives)).replaceAll("Type", "type")
+    @RequestMapping(value = "/getOffLineMessage", method = RequestMethod.POST)
+    String getOffLineMessage(HttpServletRequest request){
+        User user = (User) request.getSession().getAttribute("user");
+        LOGGER.info("查询 uid = " + user.getId() + " 的离线消息");
+        List<Receive> receives = userService.findOffLineMessage(user.getId(), 0);
+        receives.forEach(receive -> {
+                User user1 = userService.findUserById(receive.getId());
+                receive.setUsername(user1.getUsername());
+                receive.setAvatar(user1.getAvatar());
+        } );
+        return gson.toJson(new ResultSet(receives)).replaceAll("Type", "type");
     }
 
 
@@ -210,14 +222,14 @@ public class UserController {
      *
      */
     @ResponseBody
-    @RequestMapping(value = Array("/updateSign"), method = Array(RequestMethod.POST))
-    def updateSign(request: HttpServletRequest, @RequestParam("sign") sign: String): String = {
-        val user:User = request.getSession.getAttribute("user").asInstanceOf[User]
-        user.setSign(sign)
+    @RequestMapping(value = "/updateSign", method = RequestMethod.POST)
+    String updateSign(HttpServletRequest request, @RequestParam("sign")String sign) {
+        User user = (User) request.getSession().getAttribute("user");
+        user.setSign(sign);
         if(userService.updateSing(user)) {
-            gson.toJson(new ResultSet)
+            return gson.toJson(new ResultSet());
         } else {
-            gson.toJson(new ResultSet(SystemConstant.ERROR, SystemConstant.ERROR_MESSAGE))
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.ERROR_MESSAGE));
         }
     }
 
@@ -226,12 +238,12 @@ public class UserController {
      * @param activeCode
      *
      */
-    @RequestMapping(value = Array("/active/{activeCode}"), method = Array(RequestMethod.GET))
-    def activeUser(@PathVariable("activeCode") activeCode: String): String = {
+    @RequestMapping(value = "/active/{activeCode}", method = RequestMethod.GET)
+    String activeUser(@PathVariable("activeCode")String activeCode) {
         if(userService.activeUser(activeCode) == 1) {
-            return "redirect:/#tologin?status=1"
+            return "redirect:/#tologin?status=1";
         }
-        "redirect:/#toregister?status=0"
+        return "redirect:/#toregister?status=0";
     }
 
     /**
@@ -240,12 +252,12 @@ public class UserController {
      *
      */
     @ResponseBody
-    @RequestMapping(value = Array("/register"), method = Array(RequestMethod.POST))
-    def register(@RequestBody user: User, request: HttpServletRequest): String = {
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    String register(@RequestBody User user, HttpServletRequest request) {
         if(userService.saveUser(user, request)) {
-            gson.toJson(new ResultSet[String](SystemConstant.SUCCESS, SystemConstant.REGISTER_SUCCESS))
+            return gson.toJson(new ResultSet(Contant.SUCCESS, Contant.REGISTER_SUCCESS));
         } else {
-            gson.toJson(new ResultSet[String](SystemConstant.ERROR, SystemConstant.REGISTER_FAIL))
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.REGISTER_FAIL));
         }
     }
 
@@ -255,19 +267,19 @@ public class UserController {
      *
      */
     @ResponseBody
-    @RequestMapping(value = Array("/login"), method = Array(RequestMethod.POST))
-    def login(@RequestBody user: User, request: HttpServletRequest): String = {
-        val u: User = userService.matchUser(user)
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    String login(@RequestBody User user,HttpServletRequest request)  {
+        User u = userService.matchUser(user);
         //未激活
-        if (u != null && "nonactivated".equals(u.getStatus)) {
-            return gson.toJson(new ResultSet[User](SystemConstant.ERROR, SystemConstant.NONACTIVED))
-        } else if(u != null && !"nonactivated".equals(u.getStatus)) {
-            LOGGER.info(user + "成功登陆服务器")
-            request.getSession.setAttribute("user", u);
-            return gson.toJson(new ResultSet[User](u))
+        if (u != null && "nonactivated".equals(u.getStatus())) {
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.NONACTIVED));
+        } else if(u != null && !"nonactivated".equals(u.getStatus())) {
+            LOGGER.info(user + "成功登陆服务器");
+            request.getSession().setAttribute("user", u);
+            return gson.toJson(new ResultSet<User>(u));
         } else {
-            var result = new ResultSet[User](SystemConstant.ERROR, SystemConstant.LOGGIN_FAIL)
-            gson.toJson(result)
+            ResultSet result = new ResultSet<User>(Contant.ERROR, Contant.LOGGIN_FAIL);
+            return gson.toJson(result);
         }
     }
 
@@ -278,18 +290,18 @@ public class UserController {
      */
     @ResponseBody
     @ApiOperation("初始化聊天界面数据，分组列表好友信息、群列表")
-    @RequestMapping(value = Array("/init/{userId}"), method = Array(RequestMethod.POST))
-    def init(@PathVariable("userId") userId: Int): String = {
-        var data = new FriendAndGroupInfo
+    @RequestMapping(value = "/init/{userId}", method = RequestMethod.POST)
+    String init(@PathVariable("userId")int userId) {
+        FriendAndGroupInfo data = new FriendAndGroupInfo();
         //用户信息
-        var user = userService.findUserById(userId)
-        user.setStatus("online")
-        data.mine = user
+        User user = userService.findUserById(userId);
+        user.setStatus("online");
+        data.setMine(user) ;
         //用户群组列表
-        data.group = userService.findGroupsById(userId)
+        data.setGroup(userService.findGroupsById(userId));
         //用户好友列表
-        data.friend = userService.findFriendGroupsById(userId)
-        gson.toJson(new ResultSet[FriendAndGroupInfo](data))
+        data.setFriend(userService.findFriendGroupsById(userId));
+        return gson.toJson(new ResultSet<FriendAndGroupInfo>(data));
     }
 
     /**
@@ -298,11 +310,12 @@ public class UserController {
      *
      */
     @ResponseBody
-    @RequestMapping(value = Array("/getMembers"), method = Array(RequestMethod.GET))
-    def getMembers(@RequestParam("id") id: Int): String = {
-        val users = userService.findUserByGroupId(id)
-        val friends = new FriendList(users)
-        gson.toJson(new ResultSet[FriendList](friends))
+    @RequestMapping(value = "/getMembers", method = RequestMethod.GET)
+    String getMembers(@RequestParam("id")int id) {
+        List<User> users = userService.findUserByGroupId(id);
+        FriendList friends = new FriendList();
+        friends.setList(users);
+        return gson.toJson(new ResultSet<FriendList>(friends));
     }
 
     /**
@@ -312,18 +325,18 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/upload/image"), method = Array(RequestMethod.POST))
-    def uploadImage(@RequestParam("file") file:MultipartFile,request: HttpServletRequest): String = {
+    @RequestMapping(value = "/upload/image", method = RequestMethod.POST)
+    String uploadImage(@RequestParam("file")MultipartFile file, HttpServletRequest request) {
         if (file.isEmpty()) {
-            return gson.toJson(new ResultSet(SystemConstant.ERROR, SystemConstant.UPLOAD_FAIL))
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.UPLOAD_FAIL));
         }
-        val path = request.getServletContext.getRealPath("/")
-        val src = FileUtil.upload(SystemConstant.IMAGE_PATH, path, file)
-        var result = new HashMap[String, String]
+        String path = request.getServletContext().getRealPath("/");
+        String src = FileUtil.upload(Contant.IMAGE_PATH, path, file);
+        Map<String, String> result = new HashMap<String, String>();
         //图片的相对路径地址
-        result.put("src", src)
-        LOGGER.info("图片" + file.getOriginalFilename + "上传成功")
-        gson.toJson(new ResultSet[HashMap[String, String]](result))
+        result.put("src", src);
+        LOGGER.info("图片" + file.getOriginalFilename() + "上传成功");
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
@@ -333,35 +346,34 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/upload/file"), method = Array(RequestMethod.POST))
-    def uploadFile(@RequestParam("file") file:MultipartFile,request: HttpServletRequest): String = {
+    @RequestMapping(value = "/upload/file", method = RequestMethod.POST)
+    String uploadFile(@RequestParam("file")MultipartFile file,HttpServletRequest request) {
         if (file.isEmpty()) {
-            return gson.toJson(new ResultSet(SystemConstant.ERROR, SystemConstant.UPLOAD_FAIL))
+            return gson.toJson(new ResultSet(Contant.ERROR, Contant.UPLOAD_FAIL));
         }
-        val path = request.getServletContext.getRealPath("/")
-        val src = FileUtil.upload(SystemConstant.FILE_PATH, path, file)
-        var result = new HashMap[String, String]
+        String path = request.getServletContext().getRealPath("/");
+        String src = FileUtil.upload(Contant.FILE_PATH, path, file);
+        Map<String, String> result = new HashMap<String, String>();
         //文件的相对路径地址
-        result.put("src", src)
-        result.put("name", file.getOriginalFilename)
-        LOGGER.info("文件" + file.getOriginalFilename + "上传成功")
-        gson.toJson(new ResultSet[HashMap[String, String]](result))
+        result.put("src", src);
+        result.put("name", file.getOriginalFilename());
+        LOGGER.info("文件" + file.getOriginalFilename() + "上传成功");
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
      * @description用户更新头像
-     * @param file
      */
     @ResponseBody
-    @RequestMapping(value = Array("/updateAvatar"), method = Array(RequestMethod.POST))
-    def updateAvatar(@RequestParam("avatar") avatar: MultipartFile, request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user").asInstanceOf[User]
-        val path = request.getServletContext.getRealPath(SystemConstant.AVATAR_PATH)
-        val src = FileUtil.upload(path, avatar)
-        userService.updateAvatar(user.getId, src)
-        var result = new HashMap[String, String]
-        result.put("src", src)
-        gson.toJson(new ResultSet(result))
+    @RequestMapping(value = "/updateAvatar", method = RequestMethod.POST)
+    String updateAvatar(@RequestParam("avatar")MultipartFile avatar,HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        String path = request.getServletContext().getRealPath(Contant.AVATAR_PATH);
+        String src = FileUtil.upload(path, avatar);
+        userService.updateAvatar(user.getId(), src);
+        Map<String,String> result = new HashMap<String,String>();
+        result.put("src", src);
+        return gson.toJson(new ResultSet(result));
     }
 
     /**
@@ -370,12 +382,12 @@ public class UserController {
      * @param request
      * @return
      */
-    @RequestMapping(value = Array("/index"), method = Array(RequestMethod.GET))
-    def index(model: Model, request: HttpServletRequest): String = {
-        val user = request.getSession.getAttribute("user")
-        model.addAttribute("user", user)
-        LOGGER.info("用户" + user + "登陆服务器")
-        "index"
+    @RequestMapping(value = "/index", method = RequestMethod.GET)
+    String index(Model model,HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("user");
+        model.addAttribute("user", user);
+        LOGGER.info("用户" + user + "登陆服务器");
+        return "index";
     }
 
     /**
@@ -384,9 +396,9 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/findUser"), method = Array(RequestMethod.POST, RequestMethod.GET))
-    def findUserById(@RequestParam("id") id: Integer): String = {
-        gson.toJson(new ResultSet(userService.findUserById(id)))
+    @RequestMapping(value = "/findUser", method = {RequestMethod.POST, RequestMethod.GET})
+    String findUserById(@RequestParam("id")Integer id){
+        return gson.toJson(new ResultSet(userService.findUserById(id)));
     }
 
     /**
@@ -395,8 +407,8 @@ public class UserController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = Array("/existEmail"), method = Array(RequestMethod.POST))
-    def existEmail(@RequestParam("email") email: String): String = {
-        gson.toJson(new ResultSet(userService.existEmail(email)))
+    @RequestMapping(value = "/existEmail", method = RequestMethod.POST)
+    String existEmail(@RequestParam("email")String email){
+        return gson.toJson(new ResultSet(userService.existEmail(email)));
     }
 }

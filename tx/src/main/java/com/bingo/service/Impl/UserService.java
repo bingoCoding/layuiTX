@@ -154,7 +154,7 @@ public class UserService implements IUserService{
      * @param uid
      * @return List[AddInfo]
      */
-    public List findAddInfo(Integer uid) {
+    public List<AddInfo> findAddInfo(Integer uid) {
         List<AddInfo> list = userMapper.findAddInfo(uid);
         list.stream().forEach( info -> {
             if (info.getType() == 0) {
@@ -344,7 +344,7 @@ public class UserService implements IUserService{
      * @param user
      * @return User
      */
-    User matchUser(User user) {
+    public User matchUser(User user) {
         if (user == null || user.getEmail() == null) {
             return null;
         }

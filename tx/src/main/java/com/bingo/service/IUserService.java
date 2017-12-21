@@ -78,7 +78,7 @@ public interface IUserService {
      * @param uid
      * @return List[AddInfo]
      */
-    public List findAddInfo(Integer uid) ;
+    public List<AddInfo> findAddInfo(Integer uid) ;
     /**
      * @description 更新好友、群组信息请求
      * @return

@@ -16,7 +16,7 @@ public class FileUtil {
      * @param file 二进制文件
      * @return 文件的相对路径地址
      */
-    String upload(String types ,String path,MultipartFile file){
+    public static String upload(String types, String path, MultipartFile file){
         String name = file.getOriginalFilename();
         String paths = path + types + DateUtils.formatDate(new Date()) + "/";
         String result = types + DateUtils.formatDate(new Date()) + "/";
@@ -43,7 +43,7 @@ public class FileUtil {
      * @param file 文件
      * @return 相对路径
      */
-    String upload(String realpath ,MultipartFile file ) {
+    public static String upload(String realpath ,MultipartFile file ) {
         String name = file.getOriginalFilename();
         name = UUIDUtil.getUUID32String() + name.substring(name.indexOf("."));
         try {

@@ -21,7 +21,7 @@ public class SystemInterceptHandler extends HandlerInterceptorAdapter {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        LOGGER.info("前置处理器，在请求处理之前调用");
+        LOGGER.info("前置处理器，在请求处理之前调用"+request.getRequestURI());
         if(request.getSession().getAttribute("user") == null) {
             response.sendRedirect("/");
             return false;

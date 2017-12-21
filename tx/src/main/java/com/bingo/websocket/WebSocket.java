@@ -35,7 +35,7 @@ public class WebSocket {
      * @param session
      */
     @OnMessage
-    void onMessage(String message,Session session) {
+    public void onMessage(String message,Session session) {
         Message mess = gson.fromJson(message.replaceAll("type", "Type"), Message.class);
         LOGGER.info("来自客户端的消息: " + mess);
         switch (mess.getType()){
@@ -96,7 +96,7 @@ public class WebSocket {
      * @param uid
      */
     @OnOpen
-    void onOpen(Session session, @PathParam("uid")Integer uid) {
+    public void onOpen(Session session, @PathParam("uid")Integer uid) {
         this.uid = uid;
         WebSocketUtil.sessions.put(uid, session);
         LOGGER.info("userId = " + uid + ",sessionId = " + session.getId() + ",新连接加入!");
@@ -108,7 +108,7 @@ public class WebSocket {
      * @param session
      */
     @OnClose
-    void onClose(Session session)  {
+    public void onClose(Session session)  {
         LOGGER.info("userId = " + uid + ",sessionId = " + session.getId() + "断开连接!");
         WebSocketUtil.sessions.remove(uid);
         redisService.removeSetValue(Contant.ONLINE_USER, uid + "");
@@ -120,7 +120,7 @@ public class WebSocket {
      * @param error
      */
     @OnError
-    void onError(Session session,Throwable error ) {
+    public void onError(Session session,Throwable error ) {
         LOGGER.info(new StringBuilder().append(session.getId()).append(" 发生错误").append(error.getStackTrace()).toString());
         onClose(session);
     }
