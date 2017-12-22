@@ -1,6 +1,8 @@
 package com.bingo.domain;
 
-public class Mine {
+import java.io.Serializable;
+
+public class Mine implements Serializable {
     //我的id
     private int id;
 

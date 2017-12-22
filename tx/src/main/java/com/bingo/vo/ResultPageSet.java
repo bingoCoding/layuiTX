@@ -1,6 +1,8 @@
 package com.bingo.vo;
 
-public class ResultPageSet<T> extends ResultSet<T> {
+import java.io.Serializable;
+
+public class ResultPageSet<T> extends ResultSet<T> implements Serializable {
     private int pages;
 
     public ResultPageSet(){}

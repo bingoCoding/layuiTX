@@ -27,7 +27,7 @@ layui.use(['layim', 'jquery', 'laytpl'], function(layim){
 				if(window.location.post != ""){
 					host = host + ":" + window.location.port;
 				}
-				var url = 'ws://' + host + '/websocket/'+ getUid();
+				var url = 'ws://localhost:8081/websocket/'+ getUid();
 				socket = new ReconnectingWebSocket(url, null, {debug: true, reconnectInterval: 3000});
 				im.startListener();
 			} else {
@@ -77,7 +77,9 @@ layui.use(['layim', 'jquery', 'laytpl'], function(layim){
 				//消息盒子
 				case "unHandMessage": {
 					//消息盒子未处理的消息
-					layim.msgbox(json.count);
+					//if(json.count>0){
+                        layim.msgbox(json.count);
+					//}
 					break;
 				};
 				//删除好友消息，
@@ -127,7 +129,7 @@ layui.use(['layim', 'jquery', 'laytpl'], function(layim){
 	//基础配置
 	layim.config({
 		//主面板最小化后显示的名称
-		title: "我的LayIM",
+		title: "我的WQ",
 	    //初始化接口
 	    init: {
 	    	url: '/user/init/' + getUid()
@@ -160,7 +162,7 @@ layui.use(['layim', 'jquery', 'laytpl'], function(layim){
 	      	,icon: '&#xe64e;'
 	    }]
 	    
-	    ,title: '我的LayIM' //自定义主面板最小化时的标题
+	    ,title: '我的WQ' //自定义主面板最小化时的标题
 	    ,brief: false //是否简约模式（若开启则不显示主面板）
 	    ,right: '20px' //主面板相对浏览器右侧距离
 	    ,minRight: '20px' //聊天面板最小化时相对浏览器右侧距离

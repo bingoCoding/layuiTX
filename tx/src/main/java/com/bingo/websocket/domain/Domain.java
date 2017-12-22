@@ -1,11 +1,13 @@
 package com.bingo.websocket.domain;
 
-public class Domain {
+import java.io.Serializable;
+
+public class Domain implements Serializable {
 
     /**
      * @description 添加群信息
      */
-    public class Group {
+    public class Group implements Serializable{
         private Integer groupId;
         private String remark;
 
@@ -29,7 +31,7 @@ public class Domain {
     /**
      * @description 同意添加好友
      */
-    public class AgreeAddGroup {
+    public class AgreeAddGroup implements Serializable{
         private Integer toUid;
         private Integer groupId;
         private Integer messageBoxId;

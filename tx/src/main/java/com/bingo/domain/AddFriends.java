@@ -1,6 +1,8 @@
 package com.bingo.domain;
 
-public class AddFriends {
+import java.io.Serializable;
+
+public class AddFriends implements Serializable {
     //自己的id
     private int mid;
     //分组id

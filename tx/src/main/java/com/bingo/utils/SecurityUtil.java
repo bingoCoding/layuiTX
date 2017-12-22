@@ -30,4 +30,8 @@ public class SecurityUtil {
         }
         return encoder.matches(rawPassword, password);
     }
+
+    public static void main(String[] args) {
+        System.out.println(encrypt("123456"));
+    }
 }

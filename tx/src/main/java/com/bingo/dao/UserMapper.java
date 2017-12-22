@@ -150,7 +150,7 @@ public interface UserMapper {
      * @param Type 消息类型，可能来自friend或者group
      */
     @Results({@Result(property="id",column="mid")})
-    @Select("<script> select toid,fromid,mid,content,type,timestamp,status from t_message where type = #{Type} and " +
+    @Select("<script> select toid,fromid,mid,content,type,to_char(timestamp,'YYYY-MM-DD HH:mm:ss') timestamp,status from t_message where type = #{Type} and " +
             "<choose><when test='uid!=null and mid !=null'>(toid = #{uid} and mid = #{mid}) or (toid = #{mid} and mid = #{uid}) </when><when test='mid != null'> mid = #{mid} </when></choose> order by timestamp </script>")
     List<Receive> findHistoryMessage(@Param("uid")Integer uid, @Param("mid")Integer mid, @Param("Type")String Type);
 
@@ -160,7 +160,7 @@ public interface UserMapper {
      * @param status 历史消息还是离线消息 0代表离线 1表示已读
      */
     @Results({@Result(property="id",column="mid")})
-    @Select("select toid,fromid,mid,content,type,timestamp,status from t_message where toid = #{uid} and status = #{status}")
+    @Select("select toid,fromid,mid,content,type,to_char(timestamp,'YYYY-MM-DD HH:mm:ss') timestamp,status from t_message where toid = #{uid} and status = #{status}")
     List<Receive> findOffLineMessage(@Param("uid")Integer uid, @Param("status")Integer status);
 
     /**

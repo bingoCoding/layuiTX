@@ -2,7 +2,9 @@ package com.bingo.vo;
 
 import com.bingo.common.Contant;
 
-public class ResultSet<T> {
+import java.io.Serializable;
+
+public class ResultSet<T> implements Serializable {
     private int code = Contant.SUCCESS;
 
     private String msg = Contant.SUCCESS_MESSAGE;

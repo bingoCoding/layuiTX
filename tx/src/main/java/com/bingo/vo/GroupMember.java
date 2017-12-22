@@ -1,7 +1,9 @@
 package com.bingo.vo;
 
 
-public class GroupMember {
+import java.io.Serializable;
+
+public class GroupMember implements Serializable {
     // 群组编号
     private Integer gid;
     // 用户编号

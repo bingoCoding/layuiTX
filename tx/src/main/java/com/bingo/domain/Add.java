@@ -1,8 +1,9 @@
 package com.bingo.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Add {
+public class Add implements Serializable {
     //好友列表id或群组id
     private Integer groupId;
     //附言

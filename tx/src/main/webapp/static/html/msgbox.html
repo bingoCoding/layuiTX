@@ -39,19 +39,19 @@
         <span>{{ item.remark ? '附言: '+item.remark : '' }}</span>
       </p>
       <p class="layim-msgbox-btn">
-      {{#  if(item.read === 0){ }}
-      	{{#  if(item.type === 0){ }}	
+      {{#  if(item.read == "0"){ }}
+      	{{#  if(item.type == 0){ }}
 	  		<button class="layui-btn layui-btn-small" data-type="agreeAddFriend">同意</button>
         	<button class="layui-btn layui-btn-small layui-btn-primary" data-type="refuseAddFriend">拒绝</button>
-      	{{#  } else if(item.type === 1){ }}
+      	{{#  } else if(item.type == 1){ }}
       		<button class="layui-btn layui-btn-small" data-type="agreeAddGroup">同意</button>
         	<button class="layui-btn layui-btn-small layui-btn-primary" data-type="refuseAddGroup">拒绝</button>
-      	{{#  } }}  
-	  {{#  } else if(item.read === 1){ }}
+      	{{#  }  }}
+	  {{#  } else if(item.read == "1"){ }}
 			已同意
-	  {{#  } else if(item.read === 2){ }}
+	  {{#  } else if(item.read == "2"){ }}
 	  	<em>已拒绝</em>
-	  {{# } }}   
+	  {{# } }}
       </p>
     </li>
   {{# } else { }}
@@ -84,6 +84,7 @@ layui.use(['layim', 'flow'], function(){
 	      layui.each(res.data, function(index, item){
 	          cache[item.from] = item.user;
 	      });
+          console.info(res.data);
      	  callback && callback(res.data, res.pages);
       },"json");
   };

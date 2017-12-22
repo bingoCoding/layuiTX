@@ -409,7 +409,7 @@ public class UserService implements IUserService{
      * @return Int
      */
     //清除缓存
-    @CacheEvict(value = {"findUserById","findFriendGroupsById","findUserByGroupId"})
+    @CacheEvict(value = {"findUserById","findFriendGroupsById","findUserByGroupId"}, allEntries = true)
     @Transactional
     public Boolean saveUser(User user, HttpServletRequest request) {
         if (user == null || user.getUsername() == null || user.getPassword() == null || user.getEmail() == null) {

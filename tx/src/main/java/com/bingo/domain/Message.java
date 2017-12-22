@@ -1,6 +1,8 @@
 package com.bingo.domain;
 
-public class Message {
+import java.io.Serializable;
+
+public class Message implements Serializable {
     //随便定义，用于在服务端区分消息类型
     private String Type;
 

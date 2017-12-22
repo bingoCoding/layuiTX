@@ -1,6 +1,8 @@
 package com.bingo.domain;
 
-public class FriendGroup {
+import java.io.Serializable;
+
+public class FriendGroup implements Serializable {
     //用户id
     private Integer uid;
 

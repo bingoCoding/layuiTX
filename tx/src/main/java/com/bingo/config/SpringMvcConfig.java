@@ -22,7 +22,7 @@ public class SpringMvcConfig extends WebMvcConfigurerAdapter {
         registry.addInterceptor(new SystemInterceptHandler())
                 .addPathPatterns("/**").excludePathPatterns("/").excludePathPatterns("/*.html")
                 .excludePathPatterns("/user/login").excludePathPatterns("/user/register")
-                .excludePathPatterns("/user/existEmail");
+                .excludePathPatterns("/user/existEmail").excludePathPatterns("/user/active/*");
         super.addInterceptors(registry);
     }
 }

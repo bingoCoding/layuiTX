@@ -2,9 +2,10 @@ package com.bingo.vo;
 
 import com.bingo.domain.User;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class FriendAndGroupInfo {
+public class FriendAndGroupInfo implements Serializable {
     //我的信息
     private User mine;
 

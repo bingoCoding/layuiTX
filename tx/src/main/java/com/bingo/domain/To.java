@@ -1,6 +1,8 @@
 package com.bingo.domain;
 
-public class To {
+import java.io.Serializable;
+
+public class To implements Serializable {
     //对方的id
     private Integer id;
 

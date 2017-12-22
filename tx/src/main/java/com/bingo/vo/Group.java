@@ -1,6 +1,8 @@
 package com.bingo.vo;
 
-public class Group {
+import java.io.Serializable;
+
+public class Group implements Serializable {
     private Integer id;
     private String groupname;
 

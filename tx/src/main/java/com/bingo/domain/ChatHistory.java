@@ -1,8 +1,9 @@
 package com.bingo.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class ChatHistory {
+public class ChatHistory implements Serializable {
     //用户id
     private Integer id;
 

@@ -1,8 +1,9 @@
 package com.bingo.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class Receive {
+public class Receive implements Serializable {
     //发送给哪个用户
     private Integer toid;
 

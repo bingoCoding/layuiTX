@@ -1,8 +1,9 @@
 package com.bingo.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class AddMessage {
+public class AddMessage implements Serializable {
     private Integer id;
     //谁发起的请求
     private Integer fromUid;

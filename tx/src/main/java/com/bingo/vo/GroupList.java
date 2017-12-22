@@ -1,6 +1,8 @@
 package com.bingo.vo;
 
-public class GroupList extends Group{
+import java.io.Serializable;
+
+public class GroupList extends Group implements Serializable {
     //群头像地址
     private String avatar;
 

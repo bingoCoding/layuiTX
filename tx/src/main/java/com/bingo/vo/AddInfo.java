@@ -3,7 +3,9 @@ package com.bingo.vo;
 
 import com.bingo.domain.User;
 
-public class AddInfo {
+import java.io.Serializable;
+
+public class AddInfo implements Serializable {
     private Integer id;
 
     private Integer uid;
